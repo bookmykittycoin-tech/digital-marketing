@@ -8,5 +8,3 @@
 # Allow git related files
 !.gitignore
 !.htaccess
-!api/
-!api/**

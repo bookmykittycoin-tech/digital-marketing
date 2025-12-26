@@ -8,3 +8,4 @@
 # Allow git related files
 !.gitignore
 !.htaccess
+!submit-form

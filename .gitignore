@@ -8,4 +8,5 @@
 # Allow git related files
 !.gitignore
 !.htaccess
-!submit-form.php
+!api/
+!api/**

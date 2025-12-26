@@ -1,5 +1,9 @@
-node_modules
-.env
-src
-public
-!dist
+# Ignore everything
+*
+
+# Allow dist folder
+!dist/
+!dist/**
+
+# Allow git related files
+!.gitignore

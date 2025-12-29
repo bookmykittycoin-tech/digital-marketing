@@ -37,6 +37,7 @@ $city          = $_POST['city'] ?? '';
 $course        = $_POST['course'] ?? '';
 $qualification = $_POST['qualification'] ?? '';
 $reason        = $_POST['reason'] ?? '';
+$joiningDate        = $_POST['joiningDate'] ?? '';
 
 // Basic validation
 if (empty($name) || empty($phone) || empty($email)) {
@@ -50,8 +51,8 @@ if (empty($name) || empty($phone) || empty($email)) {
 // ✅ Prepared Statement (SAFE & PROFESSIONAL)
 $stmt = $conn->prepare(
     "INSERT INTO registration 
-    (name, phone, email, city, course, qualification, reason) 
-    VALUES (?, ?, ?, ?, ?, ?, ?)"
+    (name, phone, email, city, course, qualification,joiningDate, reason) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 );
 
 $stmt->bind_param(
@@ -62,6 +63,7 @@ $stmt->bind_param(
     $city,
     $course,
     $qualification,
+    $joiningDate,
     $reason
 );
 

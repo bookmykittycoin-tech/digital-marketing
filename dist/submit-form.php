@@ -25,9 +25,9 @@ $phone         = $_POST['phone'] ?? '';
 $email         = $_POST['email'] ?? '';
 $city          = $_POST['city'] ?? '';
 $course        = $_POST['course'] ?? '';
-$qualification = $_POST['qualification'] ?? '';
-$joiningDate   = $_POST['joiningDate'] ?? '';
 $reason        = $_POST['reason'] ?? '';
+$batch = $_POST['batch'] ?? '';
+$joiningDate   = $_POST['joiningDate'] ?? '';
 
 // Validation
 if (!$name || !$phone || !$email) {
@@ -37,20 +37,19 @@ if (!$name || !$phone || !$email) {
 
 // ✅ FIXED PREPARED STATEMENT
 $stmt = $conn->prepare("
-    INSERT INTO registration 
-    (name, phone, email, city, course, qualification, joiningDate, reason)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO digital-marketing_contact 
+    (name, phone, email, city, course, batch, reason)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
 ");
 
 $stmt->bind_param(
-    "ssssssss", // 🔥 8 parameters — PERFECT MATCH
+    "ssssss", // 🔥 7 parameters — PERFECT MATCH
     $name,
     $phone,
     $email,
     $city,
     $course,
-    $qualification,
-    $joiningDate,
+    $batch,
     $reason
 );
 

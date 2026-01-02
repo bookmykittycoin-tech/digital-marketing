@@ -1,49 +1,66 @@
 <?php
 header("Content-Type: application/json");
 
+// Allow only POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(["success" => false, "message" => "Invalid request method"]);
     exit;
 }
 
+// ✅ Hostinger DB Connection
 $conn = new mysqli(
-    "mysql.hostinger.in",
+    "localhost",
     "u132079503_creatoschool",
     "Creatoschool1",
     "u132079503_creatoschool"
 );
 
+// Connection check
 if ($conn->connect_error) {
-    echo json_encode(["success" => false, "message" => "Database connection failed"]);
+    echo json_encode([
+        "success" => false,
+        "message" => "Database connection failed"
+    ]);
     exit;
 }
 
-// Collect data
-$name          = $_POST['name'] ?? '';
-$phone         = $_POST['phone'] ?? '';
-$email         = $_POST['email'] ?? '';
-$city          = $_POST['city'] ?? '';
-$course        = $_POST['course'] ?? '';
-$reason        = $_POST['reason'] ?? '';
-$batch = $_POST['batch'] ?? '';
-$joiningDate   = $_POST['joiningDate'] ?? '';
+// Collect Data
+$name   = trim($_POST['name'] ?? '');
+$phone  = trim($_POST['phone'] ?? '');
+$email  = trim($_POST['email'] ?? '');
+$city   = trim($_POST['city'] ?? '');
+$course = trim($_POST['course'] ?? '');
+$reason = trim($_POST['reason'] ?? '');
+$batch  = trim($_POST['batch'] ?? '');
 
 // Validation
 if (!$name || !$phone || !$email) {
-    echo json_encode(["success" => false, "message" => "Required fields missing"]);
+    echo json_encode([
+        "success" => false,
+        "message" => "Required fields missing"
+    ]);
     exit;
 }
 
-// ✅ FIXED PREPARED STATEMENT
+// ✅ Correct SQL (table name escaped)
 $stmt = $conn->prepare("
-    INSERT INTO digital-marketing_contact 
+    INSERT INTO `digital_marketing_contact`
     (name, phone, email, city, course, batch, reason)
     VALUES (?, ?, ?, ?, ?, ?, ?)
 ");
 
+if (!$stmt) {
+    echo json_encode([
+        "success" => false,
+        "message" => $conn->error
+    ]);
+    exit;
+}
+
+// ✅ Correct parameter count
 $stmt->bind_param(
-    "ssssss", // 🔥 7 parameters — PERFECT MATCH
+    "sssssss",
     $name,
     $phone,
     $email,

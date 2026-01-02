@@ -1,5 +1,15 @@
 <?php
-header("Content-Type: application/json");
+// submit-form.php
+header("Content-Type: application/json; charset=utf-8");
+header("Access-Control-Allow-Origin: *"); // tighten to your domain in production
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Accept");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    // CORS preflight response
+    http_response_code(204);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -7,63 +17,80 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$conn = new mysqli(
-    "mysql.hostinger.in",
-    "u132079503_creatoschool",
-    "Creatoschool1",
-    "u132079503_creatoschool"
-);
+// Use environment variables in production
+$db_host = getenv('DB_HOST') ?: 'mysql.hostinger.in';
+$db_user = getenv('DB_USER') ?: 'u132079503_creatoschool';
+$db_pass = getenv('DB_PASS') ?: 'Creatoschool1';
+$db_name = getenv('DB_NAME') ?: 'u132079503_creatoschool';
 
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
+    http_response_code(500);
+    error_log("DB connect error: " . $conn->connect_error);
     echo json_encode(["success" => false, "message" => "Database connection failed"]);
     exit;
 }
 
-// Collect data
-$name          = $_POST['name'] ?? '';
-$phone         = $_POST['phone'] ?? '';
-$email         = $_POST['email'] ?? '';
-$city          = $_POST['city'] ?? '';
-$course        = $_POST['course'] ?? '';
-$qualification = $_POST['qualification'] ?? '';
-$joiningDate   = $_POST['joiningDate'] ?? '';
-$reason        = $_POST['reason'] ?? '';
+// Collect + sanitize
+$name   = trim($_POST['name'] ?? '');
+$phone  = trim($_POST['phone'] ?? '');
+$email  = trim($_POST['email'] ?? '');
+$city   = trim($_POST['city'] ?? '');
+$course = trim($_POST['course'] ?? '');
+$reason = trim($_POST['reason'] ?? '');
+$batch  = trim($_POST['batch'] ?? '');
 
-// Validation
+// Basic validation
 if (!$name || !$phone || !$email) {
+    http_response_code(400);
     echo json_encode(["success" => false, "message" => "Required fields missing"]);
     exit;
 }
 
-// ✅ FIXED PREPARED STATEMENT
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Invalid email address"]);
+    exit;
+}
+
+// Normalize phone: keep digits only
+$phoneDigits = preg_replace('/\D+/', '', $phone);
+if (strlen($phoneDigits) < 7 || strlen($phoneDigits) > 15) {
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Invalid phone number"]);
+    exit;
+}
+
+// Prepared statement — matches frontend fields
 $stmt = $conn->prepare("
-    INSERT INTO registration 
-    (name, phone, email, city, course, qualification, joiningDate, reason)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO digital-marketing_contact
+    (name, phone, email, city, course, reason, batch, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
 ");
 
-$stmt->bind_param(
-    "ssssssss", // 🔥 8 parameters — PERFECT MATCH
+if (!$stmt) {
+    http_response_code(500);
+    error_log("Prepare failed: " . $conn->error);
+    echo json_encode(["success" => false, "message" => "Server error"]);
+    exit;
+}
+
+$stmt->bind_param("sssssss",
     $name,
-    $phone,
+    $phoneDigits,
     $email,
     $city,
     $course,
-    $qualification,
-    $joiningDate,
-    $reason
+    $reason,
+    $batch
 );
 
 if ($stmt->execute()) {
-    echo json_encode([
-        "success" => true,
-        "message" => "Registration successful"
-    ]);
+    echo json_encode(["success" => true, "message" => "Registration successful"]);
 } else {
-    echo json_encode([
-        "success" => false,
-        "message" => $stmt->error
-    ]);
+    http_response_code(500);
+    error_log("Execute failed: " . $stmt->error);
+    echo json_encode(["success" => false, "message" => "Database insert failed"]);
 }
 
 $stmt->close();
